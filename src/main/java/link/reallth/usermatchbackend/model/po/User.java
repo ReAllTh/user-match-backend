@@ -4,21 +4,24 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Date;
+
 /**
- * user table
- * @TableName user
+ * user po
+ *
+ * @author ReAllTh
  */
-@TableName(value ="user")
+@TableName(value = "user")
 @Data
 public class User implements Serializable {
     /**
      * user id
      */
-    @TableId
+    @TableId(type = IdType.ASSIGN_UUID)
     private String id;
 
     /**
@@ -34,7 +37,7 @@ public class User implements Serializable {
     /**
      * user password
      */
-    private String passwd;
+    private String password;
 
     /**
      * user avatar url
@@ -43,8 +46,8 @@ public class User implements Serializable {
 
     /**
      * user role
--1 admin
--0 normal
+     * -1 admin
+     * -0 normal
      */
     private Integer role;
 
@@ -55,8 +58,8 @@ public class User implements Serializable {
 
     /**
      * logical deleted
--1 deleted
--0 normal
+     * -1 deleted
+     * -0 normal
      */
     private Integer deleted;
 
@@ -70,6 +73,7 @@ public class User implements Serializable {
      */
     private Date updateTime;
 
+    @Serial
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

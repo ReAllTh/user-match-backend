@@ -4,21 +4,25 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Date;
+
 /**
- * team_user table
- * @TableName team_user
+ * team_user po
+ *
+ * @author ReAllTh
  */
-@TableName(value ="team_user")
+@TableName(value = "team_user")
 @Data
 public class TeamUser implements Serializable {
+
     /**
      * team_user id
      */
-    @TableId
+    @TableId(type = IdType.ASSIGN_UUID)
     private String id;
 
     /**
@@ -38,8 +42,8 @@ public class TeamUser implements Serializable {
 
     /**
      * logical deleted
--1 deleted
--0 normal
+     * -1 deleted
+     * -0 normal
      */
     private Integer deleted;
 
@@ -53,6 +57,7 @@ public class TeamUser implements Serializable {
      */
     private Date updateTime;
 
+    @Serial
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

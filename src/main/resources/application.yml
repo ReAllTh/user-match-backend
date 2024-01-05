@@ -1,1 +1,34 @@
-spring.application.name=user-match-backend
+spring:
+  application:
+    name: user-match-backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/user_center
+    username: reallth
+    password: ....
+server:
+  address: 0.0.0.0
+  port: 8080
+mybatis-plus:
+  global-config:
+    # logic delete config
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+# knife4j config
+springdoc:
+  default-flat-param-object: true
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    enable-footer: false
+    enable-footer-custom: true
+    footer-custom-content: ReAllTh ©[MIT LICENCE](https://choosealicense.com/licenses/mit/)
+    enable-swagger-models: true
+    swagger-model-name: Models
+  basic:
+    enable: true
+    username: admin
+    password: passwd
