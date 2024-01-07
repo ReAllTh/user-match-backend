@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * user po
+ * user persistent object
  *
  * @author ReAllTh
  */
@@ -37,6 +37,7 @@ public class User implements Serializable {
     /**
      * user password
      */
+    @TableField(value = "passwd")
     private String password;
 
     /**

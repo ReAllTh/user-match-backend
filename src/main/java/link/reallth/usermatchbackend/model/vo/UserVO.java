@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * user vo
+ * user view object
  *
  * @author ReAllTh
  */

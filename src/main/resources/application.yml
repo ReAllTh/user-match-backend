@@ -6,10 +6,16 @@ spring:
     url: jdbc:mysql://localhost:3306/user_center
     username: reallth
     password: ....
+  # data format
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
 server:
   address: 0.0.0.0
   port: 8080
 mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     # logic delete config
     db-config:

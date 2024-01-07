@@ -5,15 +5,15 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * sign up dto
+ * sign up data transfer object
  *
  * @author ReAllTh
  */
 @Data
 public class SignUpDTO {
-    private final String username;
-    private final String email;
-    private final String password;
-    private final String avatar;
-    private final List<String> tags;
+    private String username;
+    private String email;
+    private String password;
+    private String avatar;
+    private List<String> tags;
 }

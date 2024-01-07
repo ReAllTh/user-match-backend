@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * team po
+ * team persistent object
  *
  * @author ReAllTh
  */
@@ -43,7 +43,8 @@ public class Team implements Serializable {
     /**
      * team password(if private)
      */
-    private String passwd;
+    @TableField(value = "passwd")
+    private String password;
 
     /**
      * team max user

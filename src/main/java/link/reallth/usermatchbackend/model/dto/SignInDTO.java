@@ -3,13 +3,13 @@ package link.reallth.usermatchbackend.model.dto;
 import lombok.Data;
 
 /**
- * sign in dto
+ * sign in data transfer object
  *
  * @author ReAllTh
  */
 @Data
 public class SignInDTO {
-    private final String username;
-    private final String email;
-    private final String password;
+    private String username;
+    private String email;
+    private String password;
 }

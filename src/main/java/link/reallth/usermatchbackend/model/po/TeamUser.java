@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * team_user po
+ * team_user persistent object
  *
  * @author ReAllTh
  */

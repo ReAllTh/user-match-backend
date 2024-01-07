@@ -46,11 +46,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         List<String> tags = signUpDTO.getTags();
         // check username email and password
         this.checkUsernameEmailAndPassword(username, email, password);
+        // check if username or email already exist
+        if (this.count(new QueryWrapper<User>().eq("username", username)
+                .or().eq("email", email)) > 0)
+            throw new BaseException(CODES.PARAM_ERR, "username or email already exist");
         // check avatar address invalid
         if (StringUtils.isNotBlank(avatar) && !Pattern.matches("^(?:/|(?:https?|ftp)://)[\\w/.\\-]{1,2084}$", avatar))
             throw new BaseException(CODES.PARAM_ERR, "invalid url");
         // digest password
         String digested = DigestUtils.md5DigestAsHex((password + SALT).getBytes(StandardCharsets.UTF_8));
+        // format tags
+        tags = tags.stream().sorted().map(StringUtils::lowerCase).toList();
         // generate a new user
         User newUser = new User();
         BeanUtils.copyProperties(signUpDTO, newUser, PASSWORD, "tags");
@@ -60,7 +66,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!this.save(newUser))
             throw new BaseException(CODES.SYSTEM_ERR, "database insert error");
         // keep signUp in status
-        newUser = this.getOne(new QueryWrapper<>(newUser));
+        newUser = this.getById(newUser.getId());
         UserVO newUserVO = new UserVO();
         BeanUtils.copyProperties(newUser, newUserVO);
         newUserVO.setTags(new Gson().fromJson(newUser.getTags(), new TypeToken<ArrayList<String>>() {
@@ -97,6 +103,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return userVO;
     }
 
+    @Override
+    public UserVO currentUser(HttpSession session) {
+        return (UserVO) session.getAttribute(CURRENT_USE);
+    }
+
+    @Override
+    public void signOut(HttpSession session) {
+        session.removeAttribute(CURRENT_USE);
+    }
+
     private void checkUsernameEmailAndPassword(String username, String email, String password) {
         // check params blank
         if (StringUtils.isBlank(username) && StringUtils.isBlank(email))
@@ -107,11 +123,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StringUtils.isNotBlank(username) && !Pattern.matches("^\\w{4,16}$", username))
             throw new BaseException(CODES.PARAM_ERR, "the username must be a string of letters, numbers, and underscores between 4 and 16 characters in length");
         // check email invalid
-        if (StringUtils.isNotBlank(email) && !Pattern.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email))
+        if (StringUtils.isNotBlank(email) && !Pattern.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,128}$", email))
             throw new BaseException(CODES.PARAM_ERR, "invalid email address");
         // check password invalid
-        if (!Pattern.matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,16}$", password))
-            throw new BaseException(CODES.PARAM_ERR, "password must contain at least one letter and one number and be between 8 and 16 characters long");
+        if (!Pattern.matches("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{6,18}$", password))
+            throw new BaseException(CODES.PARAM_ERR, "password must contain a combination of uppercase and lowercase letters and numbers, special characters can be used, and the length should be between 6-18");
     }
 }
 
