@@ -10,7 +10,7 @@ import java.util.List;
  * @author ReAllTh
  */
 @Data
-public class SignUpDTO {
+public class UserSignUpDTO {
     private String username;
     private String email;
     private String password;

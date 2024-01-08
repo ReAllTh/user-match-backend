@@ -15,6 +15,19 @@ public class ResponseUtils {
     }
 
     /**
+     * generate a success response without data
+     *
+     * @param <T> response data type
+     * @return base response without data
+     */
+    public static <T> BaseResponse<T> success() {
+        CODES codes = CODES.SUCCESS;
+        int code = codes.getCode();
+        String msg = codes.getMsg();
+        return new BaseResponse<>(code, msg, "operation success", null);
+    }
+
+    /**
      * generate a success response with data
      *
      * @param data response data

@@ -2,8 +2,8 @@ package link.reallth.usermatchbackend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.servlet.http.HttpSession;
-import link.reallth.usermatchbackend.model.dto.SignInDTO;
-import link.reallth.usermatchbackend.model.dto.SignUpDTO;
+import link.reallth.usermatchbackend.model.dto.UserSignInDTO;
+import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
 import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 
@@ -17,21 +17,21 @@ public interface UserService extends IService<User> {
     /**
      * user sign up
      *
-     * @param signUpDTO sign up info dto
-     * @param session   session
+     * @param userSignUpDTO sign up info data transfer object
+     * @param session       session
      * @return new user
      */
-    UserVO signUp(SignUpDTO signUpDTO, HttpSession session);
+    UserVO signUp(UserSignUpDTO userSignUpDTO, HttpSession session);
 
 
     /**
      * user sign in
      *
-     * @param signInDTO sign in dto
-     * @param session   session
+     * @param userSignInDTO sign in data transfer object
+     * @param session       session
      * @return new user
      */
-    UserVO signIn(SignInDTO signInDTO, HttpSession session);
+    UserVO signIn(UserSignInDTO userSignInDTO, HttpSession session);
 
     /**
      * return current user
@@ -46,4 +46,13 @@ public interface UserService extends IService<User> {
      * @param session session
      */
     void signOut(HttpSession session);
+
+    /**
+     * user delete
+     *
+     * @param id      user delete data tranfer object
+     * @param session session
+     * @return result
+     */
+    boolean deleteById(String id, HttpSession session);
 }

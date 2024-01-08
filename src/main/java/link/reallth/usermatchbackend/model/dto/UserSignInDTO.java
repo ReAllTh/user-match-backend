@@ -8,7 +8,7 @@ import lombok.Data;
  * @author ReAllTh
  */
 @Data
-public class SignInDTO {
+public class UserSignInDTO {
     private String username;
     private String email;
     private String password;

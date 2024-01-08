@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.mapper.UserMapper;
-import link.reallth.usermatchbackend.model.dto.SignInDTO;
-import link.reallth.usermatchbackend.model.dto.SignUpDTO;
+import link.reallth.usermatchbackend.model.dto.UserSignInDTO;
+import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
 import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
@@ -34,21 +34,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     private static final String SALT = "salt";
     private static final String PASSWORD = "password";
-    private static final String CURRENT_USE = "currentUser";
+    private static final String CURRENT_USER = "currentUser";
+    private static final int ADMIN_ROLE = 1;
 
     @Override
-    public UserVO signUp(SignUpDTO signUpDTO, HttpSession session) {
+    public UserVO signUp(UserSignUpDTO userSignUpDTO, HttpSession session) {
         // extract info
-        String username = signUpDTO.getUsername();
-        String email = signUpDTO.getEmail();
-        String password = signUpDTO.getPassword();
-        String avatar = signUpDTO.getAvatar();
-        List<String> tags = signUpDTO.getTags();
+        String username = userSignUpDTO.getUsername();
+        String email = userSignUpDTO.getEmail();
+        String password = userSignUpDTO.getPassword();
+        String avatar = userSignUpDTO.getAvatar();
+        List<String> tags = userSignUpDTO.getTags();
         // check username email and password
         this.checkUsernameEmailAndPassword(username, email, password);
         // check if username or email already exist
-        if (this.count(new QueryWrapper<User>().eq("username", username)
-                .or().eq("email", email)) > 0)
+        if (this.exists(new QueryWrapper<User>().eq("username", username)
+                .or().eq("email", email)))
             throw new BaseException(CODES.PARAM_ERR, "username or email already exist");
         // check avatar address invalid
         if (StringUtils.isNotBlank(avatar) && !Pattern.matches("^(?:/|(?:https?|ftp)://)[\\w/.\\-]{1,2084}$", avatar))
@@ -59,7 +60,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         tags = tags.stream().sorted().map(StringUtils::lowerCase).toList();
         // generate a new user
         User newUser = new User();
-        BeanUtils.copyProperties(signUpDTO, newUser, PASSWORD, "tags");
+        BeanUtils.copyProperties(userSignUpDTO, newUser, PASSWORD, "tags");
         newUser.setPassword(digested);
         newUser.setTags(new Gson().toJson(tags));
         // insert to db
@@ -71,26 +72,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         BeanUtils.copyProperties(newUser, newUserVO);
         newUserVO.setTags(new Gson().fromJson(newUser.getTags(), new TypeToken<ArrayList<String>>() {
         }));
-        session.setAttribute(CURRENT_USE, newUserVO);
+        session.setAttribute(CURRENT_USER, newUserVO);
         return newUserVO;
     }
 
     @Override
-    public UserVO signIn(SignInDTO signInDTO, HttpSession session) {
+    public UserVO signIn(UserSignInDTO userSignInDTO, HttpSession session) {
         // check if already login
-        if (session.getAttribute(CURRENT_USE) != null)
+        if (session.getAttribute(CURRENT_USER) != null)
             throw new BaseException(CODES.BUSINESS_ERR, "already login");
         // extract info
-        String username = signInDTO.getUsername();
-        String email = signInDTO.getEmail();
-        String password = signInDTO.getPassword();
+        String username = userSignInDTO.getUsername();
+        String email = userSignInDTO.getEmail();
+        String password = userSignInDTO.getPassword();
         // check params
         this.checkUsernameEmailAndPassword(username, email, password);
         // digest password
         String digested = DigestUtils.md5DigestAsHex((password + SALT).getBytes(StandardCharsets.UTF_8));
         // generate target user
         User user = new User();
-        BeanUtils.copyProperties(signInDTO, user, PASSWORD);
+        BeanUtils.copyProperties(userSignInDTO, user, PASSWORD);
         user.setPassword(digested);
         // check if user signed up
         User targetUser = this.getOne(new QueryWrapper<>(user));
@@ -99,18 +100,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // keep signUp in status
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(targetUser, userVO);
-        session.setAttribute(CURRENT_USE, userVO);
+        session.setAttribute(CURRENT_USER, userVO);
         return userVO;
     }
 
     @Override
     public UserVO currentUser(HttpSession session) {
-        return (UserVO) session.getAttribute(CURRENT_USE);
+        return (UserVO) session.getAttribute(CURRENT_USER);
     }
 
     @Override
     public void signOut(HttpSession session) {
-        session.removeAttribute(CURRENT_USE);
+        session.removeAttribute(CURRENT_USER);
+    }
+
+    @Override
+    public boolean deleteById(String id, HttpSession session) {
+        // check if permissions are legal
+        UserVO currentUser = currentUser(session);
+        if (currentUser == null || currentUser.getRole() != ADMIN_ROLE)
+            throw new BaseException(CODES.PERMISSION_ERR, "permission denied");
+        // check if id blank
+        if (StringUtils.isBlank(id))
+            throw new BaseException(CODES.PARAM_ERR, "id can not be blank");
+        // check if target user exist
+        if (!this.exists(new QueryWrapper<User>().eq("id", id)))
+            throw new BaseException(CODES.PARAM_ERR, "no such user");
+        // remove
+        if (!this.removeById(id))
+            throw new BaseException(CODES.SYSTEM_ERR, "database delete error");
+        return true;
     }
 
     private void checkUsernameEmailAndPassword(String username, String email, String password) {

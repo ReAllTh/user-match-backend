@@ -5,13 +5,14 @@ import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.common.BaseResponse;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.exception.BaseException;
-import link.reallth.usermatchbackend.model.dto.SignInDTO;
-import link.reallth.usermatchbackend.model.dto.SignUpDTO;
-import link.reallth.usermatchbackend.model.ro.SignInRO;
-import link.reallth.usermatchbackend.model.ro.SignUpRO;
+import link.reallth.usermatchbackend.model.dto.UserSignInDTO;
+import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
+import link.reallth.usermatchbackend.model.ro.UserSignInRO;
+import link.reallth.usermatchbackend.model.ro.UserSignUpRO;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
 import link.reallth.usermatchbackend.utils.ResponseUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,38 +33,38 @@ public class UserController {
     /**
      * user sign up
      *
-     * @param signUpRO sign up request object
+     * @param userSignUpRO user sign up request object
      * @param session  session
      * @return new user
      */
     @PostMapping("signUp")
-    public BaseResponse<UserVO> signUp(SignUpRO signUpRO, HttpSession session) {
-        if (signUpRO == null)
+    public BaseResponse<UserVO> signUp(UserSignUpRO userSignUpRO, HttpSession session) {
+        if (userSignUpRO == null)
             throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
         if (session == null)
             throw new BaseException(CODES.ERROR, NULL_SESSION_MSG);
-        SignUpDTO signUpDTO = new SignUpDTO();
-        BeanUtils.copyProperties(signUpRO, signUpDTO);
-        UserVO userVO = userService.signUp(signUpDTO, session);
+        UserSignUpDTO userSignUpDTO = new UserSignUpDTO();
+        BeanUtils.copyProperties(userSignUpRO, userSignUpDTO);
+        UserVO userVO = userService.signUp(userSignUpDTO, session);
         return ResponseUtils.success(userVO);
     }
 
     /**
      * user sign in
      *
-     * @param signInRO sign in request object
+     * @param userSignInRO user sign in request object
      * @param session  session
      * @return target user
      */
     @PostMapping("signIn")
-    public BaseResponse<UserVO> signIn(SignInRO signInRO, HttpSession session) {
-        if (signInRO == null)
+    public BaseResponse<UserVO> signIn(UserSignInRO userSignInRO, HttpSession session) {
+        if (userSignInRO == null)
             throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
         if (session == null)
             throw new BaseException(CODES.ERROR, NULL_SESSION_MSG);
-        SignInDTO signInDTO = new SignInDTO();
-        BeanUtils.copyProperties(signInRO, signInDTO);
-        UserVO userVO = userService.signIn(signInDTO, session);
+        UserSignInDTO userSignInDTO = new UserSignInDTO();
+        BeanUtils.copyProperties(userSignInRO, userSignInDTO);
+        UserVO userVO = userService.signIn(userSignInDTO, session);
         return ResponseUtils.success(userVO);
     }
 
@@ -92,6 +93,14 @@ public class UserController {
         if (session == null)
             throw new BaseException(CODES.ERROR, NULL_SESSION_MSG);
         userService.signOut(session);
-        return ResponseUtils.success(null);
+        return ResponseUtils.success();
+    }
+
+    @PostMapping("delete")
+    public BaseResponse<Boolean> delete(String id, HttpSession session) {
+        if (StringUtils.isBlank(id))
+            throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
+        boolean result = userService.deleteById(id, session);
+        return ResponseUtils.success(result);
     }
 }

@@ -3,13 +3,15 @@ package link.reallth.usermatchbackend.model.ro;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.Data;
 
+import java.util.List;
+
 /**
- * sign in request object
+ * sign up request object
  *
  * @author ReAllTh
  */
 @Data
-public class SignInRO {
+public class UserSignUpRO {
 
     private String username;
 
@@ -17,4 +19,8 @@ public class SignInRO {
 
     @Parameter(required = true)
     private String password;
+
+    private String avatar;
+
+    private List<String> tags;
 }
