@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.mapper.UserMapper;
+import link.reallth.usermatchbackend.model.dto.UserFindDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignInDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
 import link.reallth.usermatchbackend.model.po.User;
@@ -20,8 +21,10 @@ import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * user service impl
@@ -80,7 +83,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public UserVO signIn(UserSignInDTO userSignInDTO, HttpSession session) {
         // check if already login
         if (session.getAttribute(CURRENT_USER) != null)
-            throw new BaseException(CODES.BUSINESS_ERR, "already login");
+            throw new BaseException(CODES.BUSINESS_ERR, "already signed in");
         // extract info
         String username = userSignInDTO.getUsername();
         String email = userSignInDTO.getEmail();
@@ -130,6 +133,49 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!this.removeById(id))
             throw new BaseException(CODES.SYSTEM_ERR, "database delete error");
         return true;
+    }
+
+    @Override
+    public List<UserVO> find(UserFindDTO userFindDTO, HttpSession session) {
+        // check if signed in
+        if (currentUser(session) == null)
+            throw new BaseException(CODES.PERMISSION_ERR, "permission denied");
+        // get by id if id exist
+        String id = userFindDTO.getId();
+        if (StringUtils.isNotBlank(id))
+            return Stream.of(this.getById(id)).map(user -> {
+                UserVO userVO = new UserVO();
+                BeanUtils.copyProperties(user, userVO);
+                return userVO;
+            }).toList();
+        // combination find by other params
+        QueryWrapper<User> qw = new QueryWrapper<>();
+        // like username
+        String username = userFindDTO.getUsername();
+        if (StringUtils.isNotBlank(username))
+            qw.like("username", username);
+        // like email
+        String email = userFindDTO.getEmail();
+        if (StringUtils.isNotBlank(email))
+            qw.like("email", email);
+        // role
+        Integer role = userFindDTO.getRole();
+        if (role != null)
+            qw.eq("role", role);
+        // like tags
+        List<String> tags = userFindDTO.getTags();
+        if (tags != null && !tags.isEmpty())
+            qw.like("tags", tags);
+        // create time
+        Date createTime = userFindDTO.getCreateTime();
+        if (createTime != null)
+            qw.like("create_time", createTime);
+
+        return this.list(qw).stream().map(user -> {
+            UserVO userVO = new UserVO();
+            BeanUtils.copyProperties(user, userVO);
+            return userVO;
+        }).toList();
     }
 
     private void checkUsernameEmailAndPassword(String username, String email, String password) {
