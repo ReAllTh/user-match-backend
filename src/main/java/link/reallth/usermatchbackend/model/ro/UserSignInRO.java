@@ -12,7 +12,6 @@ import lombok.Data;
 public class UserSignInRO {
 
     private String username;
-
     private String email;
 
     @Parameter(required = true)

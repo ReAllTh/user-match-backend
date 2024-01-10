@@ -1,9 +1,10 @@
 package link.reallth.usermatchbackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.exception.BaseException;
@@ -14,13 +15,13 @@ import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
 import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
+import link.reallth.usermatchbackend.utils.BusinessBeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -71,12 +72,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BaseException(CODES.SYSTEM_ERR, "database insert error");
         // keep signUp in status
         newUser = this.getById(newUser.getId());
-        UserVO newUserVO = new UserVO();
-        BeanUtils.copyProperties(newUser, newUserVO);
-        newUserVO.setTags(new Gson().fromJson(newUser.getTags(), new TypeToken<ArrayList<String>>() {
-        }));
-        session.setAttribute(CURRENT_USER, newUserVO);
-        return newUserVO;
+        UserVO userVO = BusinessBeanUtils.getUserVO(newUser);
+        session.setAttribute(CURRENT_USER, userVO);
+        return userVO;
     }
 
     @Override
@@ -101,8 +99,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (targetUser == null)
             throw new BaseException(CODES.BUSINESS_ERR, "user dose not signed up");
         // keep signUp in status
-        UserVO userVO = new UserVO();
-        BeanUtils.copyProperties(targetUser, userVO);
+        UserVO userVO = BusinessBeanUtils.getUserVO(targetUser);
         session.setAttribute(CURRENT_USER, userVO);
         return userVO;
     }
@@ -143,11 +140,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // get by id if id exist
         String id = userFindDTO.getId();
         if (StringUtils.isNotBlank(id))
-            return Stream.of(this.getById(id)).map(user -> {
-                UserVO userVO = new UserVO();
-                BeanUtils.copyProperties(user, userVO);
-                return userVO;
-            }).toList();
+            return Stream.of(this.getById(id)).map(BusinessBeanUtils::getUserVO).toList();
         // combination find by other params
         QueryWrapper<User> qw = new QueryWrapper<>();
         // like username
@@ -170,12 +163,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Date createTime = userFindDTO.getCreateTime();
         if (createTime != null)
             qw.like("create_time", createTime);
-
-        return this.list(qw).stream().map(user -> {
-            UserVO userVO = new UserVO();
-            BeanUtils.copyProperties(user, userVO);
-            return userVO;
-        }).toList();
+        // paging
+        IPage<User> userIPage = new Page<>(userFindDTO.getPage(), userFindDTO.getPageSize());
+        return this.list(userIPage, qw).stream().map(BusinessBeanUtils::getUserVO).toList();
     }
 
     private void checkUsernameEmailAndPassword(String username, String email, String password) {

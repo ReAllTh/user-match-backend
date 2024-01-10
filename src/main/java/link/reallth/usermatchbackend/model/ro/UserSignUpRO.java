@@ -14,13 +14,10 @@ import java.util.List;
 public class UserSignUpRO {
 
     private String username;
-
     private String email;
+    private String avatar;
+    private List<String> tags;
 
     @Parameter(required = true)
     private String password;
-
-    private String avatar;
-
-    private List<String> tags;
 }

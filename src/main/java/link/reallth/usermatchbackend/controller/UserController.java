@@ -5,8 +5,10 @@ import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.common.BaseResponse;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.exception.BaseException;
+import link.reallth.usermatchbackend.model.dto.UserFindDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignInDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
+import link.reallth.usermatchbackend.model.ro.UserFindRO;
 import link.reallth.usermatchbackend.model.ro.UserSignInRO;
 import link.reallth.usermatchbackend.model.ro.UserSignUpRO;
 import link.reallth.usermatchbackend.model.vo.UserVO;
@@ -17,6 +19,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * user controller
@@ -102,5 +106,17 @@ public class UserController {
             throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
         boolean result = userService.deleteById(id, session);
         return ResponseUtils.success(result);
+    }
+
+    @GetMapping("find")
+    public BaseResponse<List<UserVO>> find(UserFindRO userFindRO, HttpSession session) {
+        if (userFindRO == null)
+            throw new BaseException(CODES.PARAM_ERR, "can not found get params");
+        if (session == null)
+            throw new BaseException(CODES.PARAM_ERR, NULL_SESSION_MSG);
+        UserFindDTO userFindDTO = new UserFindDTO();
+        BeanUtils.copyProperties(userFindRO,userFindDTO);
+        List<UserVO> userVOS = userService.find(userFindDTO, session);
+        return ResponseUtils.success(userVOS);
     }
 }
