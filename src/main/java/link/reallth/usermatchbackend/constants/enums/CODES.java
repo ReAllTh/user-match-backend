@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * response codes enum
+ * response codes enums
  *
  * @author ReAllTh
  */

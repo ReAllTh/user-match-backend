@@ -9,6 +9,7 @@ import lombok.Data;
  */
 @Data
 public class UserDeleteDTO {
+
     private String id;
     private String username;
     private String email;

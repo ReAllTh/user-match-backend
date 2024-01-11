@@ -15,11 +15,13 @@ import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
 import link.reallth.usermatchbackend.utils.ResponseUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.text.ParseException;
 import java.util.List;
 
 /**
@@ -38,7 +40,7 @@ public class UserController {
      * user sign up
      *
      * @param userSignUpRO user sign up request object
-     * @param session  session
+     * @param session      session
      * @return new user
      */
     @PostMapping("signUp")
@@ -57,7 +59,7 @@ public class UserController {
      * user sign in
      *
      * @param userSignInRO user sign in request object
-     * @param session  session
+     * @param session      session
      * @return target user
      */
     @PostMapping("signIn")
@@ -100,6 +102,13 @@ public class UserController {
         return ResponseUtils.success();
     }
 
+    /**
+     * user delete
+     *
+     * @param id target user id
+     * @param session session
+     * @return result
+     */
     @PostMapping("delete")
     public BaseResponse<Boolean> delete(String id, HttpSession session) {
         if (StringUtils.isBlank(id))
@@ -108,6 +117,13 @@ public class UserController {
         return ResponseUtils.success(result);
     }
 
+    /**
+     * user find
+     *
+     * @param userFindRO user find request object
+     * @param session session
+     * @return result user list
+     */
     @GetMapping("find")
     public BaseResponse<List<UserVO>> find(UserFindRO userFindRO, HttpSession session) {
         if (userFindRO == null)
@@ -115,7 +131,19 @@ public class UserController {
         if (session == null)
             throw new BaseException(CODES.PARAM_ERR, NULL_SESSION_MSG);
         UserFindDTO userFindDTO = new UserFindDTO();
-        BeanUtils.copyProperties(userFindRO,userFindDTO);
+        BeanUtils.copyProperties(userFindRO, userFindDTO, "createTimeFrom", "createTimeTo");
+        // parse string to date
+        String createTimeFrom = userFindRO.getCreateTimeFrom();
+        String createTimeTo = userFindRO.getCreateTimeTo();
+        if (StringUtils.isNoneBlank(createTimeFrom, createTimeTo)) {
+            String parsePattern = "yyyy-MM-dd HH:mm:ss";
+            try {
+                userFindDTO.setCreateTimeFrom(DateUtils.parseDate(createTimeFrom, parsePattern));
+                userFindDTO.setCreateTimeTo(DateUtils.parseDate(createTimeTo, parsePattern));
+            } catch (ParseException e) {
+                throw new BaseException(CODES.SYSTEM_ERR, "data format should be " + parsePattern);
+            }
+        }
         List<UserVO> userVOS = userService.find(userFindDTO, session);
         return ResponseUtils.success(userVOS);
     }

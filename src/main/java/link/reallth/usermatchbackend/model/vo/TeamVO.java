@@ -8,19 +8,21 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * user view object
+ * team view object
  *
  * @author ReAllTh
  */
 @Data
-public class UserVO implements Serializable {
+public class TeamVO implements Serializable {
 
     private String id;
-    private String username;
-    private String email;
-    private String avatar;
-    private Integer role;
-    private List<String> tags;
+    private UserVO creator;
+    private String teamName;
+    private String description;
+    private Integer maxUser;
+    private List<UserVO> members;
+    private Date expireTime;
+    private Integer status;
     private Date createTime;
 
     @Serial

@@ -12,12 +12,14 @@ import java.util.List;
  */
 @Data
 public class UserFindDTO {
+
     private String id;
     private String username;
     private String email;
     private Integer role;
     private List<String> tags;
-    private Date createTime;
+    private Date createTimeFrom;
+    private Date createTimeTo;
 
     private int page;
     private int pageSize;

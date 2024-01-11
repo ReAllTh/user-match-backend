@@ -11,6 +11,7 @@ import java.util.List;
  */
 @Data
 public class UserSignUpDTO {
+
     private String username;
     private String email;
     private String password;

@@ -1,12 +1,11 @@
 package link.reallth.usermatchbackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.constants.enums.CODES;
+import link.reallth.usermatchbackend.constants.enums.ROLE;
 import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.mapper.UserMapper;
 import link.reallth.usermatchbackend.model.dto.UserFindDTO;
@@ -16,12 +15,14 @@ import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
 import link.reallth.usermatchbackend.utils.BusinessBeanUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -39,7 +40,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     private static final String SALT = "salt";
     private static final String PASSWORD = "password";
     private static final String CURRENT_USER = "currentUser";
-    private static final int ADMIN_ROLE = 1;
 
     @Override
     public UserVO signUp(UserSignUpDTO userSignUpDTO, HttpSession session) {
@@ -61,7 +61,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // digest password
         String digested = DigestUtils.md5DigestAsHex((password + SALT).getBytes(StandardCharsets.UTF_8));
         // format tags
-        tags = tags.stream().sorted().map(StringUtils::lowerCase).toList();
+        tags = tags == null ? Collections.emptyList() : tags.stream().sorted().map(StringUtils::lowerCase).toList();
         // generate a new user
         User newUser = new User();
         BeanUtils.copyProperties(userSignUpDTO, newUser, PASSWORD, "tags");
@@ -118,7 +118,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public boolean deleteById(String id, HttpSession session) {
         // check if permissions are legal
         UserVO currentUser = currentUser(session);
-        if (currentUser == null || currentUser.getRole() != ADMIN_ROLE)
+        if (currentUser == null || currentUser.getRole() != ROLE.ADMIN.getVal())
             throw new BaseException(CODES.PERMISSION_ERR, "permission denied");
         // check if id blank
         if (StringUtils.isBlank(id))
@@ -151,21 +151,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String email = userFindDTO.getEmail();
         if (StringUtils.isNotBlank(email))
             qw.like("email", email);
-        // role
+        // is role
         Integer role = userFindDTO.getRole();
         if (role != null)
             qw.eq("role", role);
-        // like tags
+        // between time
+        Date createTimeFrom = userFindDTO.getCreateTimeFrom();
+        Date createTimeTo = userFindDTO.getCreateTimeTo();
+        if (createTimeFrom != null)
+            qw.ge("create_time", createTimeFrom);
+        if (createTimeTo != null)
+            qw.le("create_time", createTimeTo);
+        // get current result stream
+        Stream<UserVO> userStream = this.list(qw).stream().map(BusinessBeanUtils::getUserVO);
+        // filter by tags
         List<String> tags = userFindDTO.getTags();
-        if (tags != null && !tags.isEmpty())
-            qw.like("tags", tags);
-        // create time
-        Date createTime = userFindDTO.getCreateTime();
-        if (createTime != null)
-            qw.like("create_time", createTime);
+        if (CollectionUtils.isNotEmpty(tags))
+            userStream = userStream.filter(user -> CollectionUtils.containsAll(user.getTags(), tags));
         // paging
-        IPage<User> userIPage = new Page<>(userFindDTO.getPage(), userFindDTO.getPageSize());
-        return this.list(userIPage, qw).stream().map(BusinessBeanUtils::getUserVO).toList();
+        int page = userFindDTO.getPage();
+        int pageSize = userFindDTO.getPageSize();
+        long skipLength = (long) (page - 1) * pageSize;
+        return userStream.skip(skipLength).limit(pageSize).toList();
     }
 
     private void checkUsernameEmailAndPassword(String username, String email, String password) {

@@ -3,7 +3,6 @@ package link.reallth.usermatchbackend.model.ro;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.Data;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -17,12 +16,22 @@ public class UserFindRO {
     private String id;
     private String username;
     private String email;
+
+    @Parameter(description = "default - 0 | admin - 1")
     private Integer role;
+
+    @Parameter(example = "c,java")
     private List<String> tags;
-    private Date createTime;
+
+    @Parameter(example = "2024-01-01 10:24:52")
+    private String createTimeFrom;
+
+    @Parameter(example = "2024-01-02 00:00:00")
+    private String createTimeTo;
 
     @Parameter(required = true)
     private int page;
+
     @Parameter(required = true)
     private int pageSize;
 }
