@@ -1,9 +1,11 @@
 package link.reallth.usermatchbackend.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.constants.enums.CODES;
+import link.reallth.usermatchbackend.constants.enums.POSITIONS;
 import link.reallth.usermatchbackend.constants.enums.STATUS;
 import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.mapper.TeamMapper;
@@ -19,9 +21,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import static link.reallth.usermatchbackend.constants.ExceptionDescConst.INVALID_PASSWORD_DESC;
+import static link.reallth.usermatchbackend.constants.RegexConst.PASSWORD_REGEX;
 
 /**
  * team service impl
@@ -44,6 +52,9 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         UserVO currentUser = userService.currentUser(session);
         if (currentUser == null)
             throw new BaseException(CODES.PERMISSION_ERR, "permission denied");
+        // check if this user create too many teams
+        if (teamUserService.count(new QueryWrapper<TeamUser>().eq("user_id", currentUser.getId()).eq("team_pos", POSITIONS.CREATOR.getVal())) > 4)
+            throw new BaseException(CODES.PERMISSION_ERR, "can not create more teams");
         // check team name
         String teamName = teamCreateDTO.getTeamName();
         if (StringUtils.isBlank(teamName) || teamName.length() > 16)
@@ -60,24 +71,37 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         Date expireTime = teamCreateDTO.getExpireTime();
         if (expireTime == null || expireTime.before(new Date()))
             throw new BaseException(CODES.PARAM_ERR, "expire time is null or before now");
-        // check status
+        // check status and password
         Integer status = teamCreateDTO.getStatus();
         if (status == null || (status != STATUS.PUBLIC.getVal() && status != STATUS.PRIVATE.getVal()))
             throw new BaseException(CODES.PARAM_ERR, "status is null or not public and private both.");
+        String password = teamCreateDTO.getPassword();
+        if (status == STATUS.PRIVATE.getVal()) {
+            if (StringUtils.isBlank(password))
+                throw new BaseException(CODES.PARAM_ERR, "private team needs a password");
+            if (!Pattern.matches(PASSWORD_REGEX, password))
+                throw new BaseException(CODES.PARAM_ERR, INVALID_PASSWORD_DESC);
+            teamCreateDTO.setPassword(DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8)));
+        }
+        if (status == STATUS.PUBLIC.getVal() && StringUtils.isNotBlank(password))
+            throw new BaseException(CODES.PARAM_ERR, "public team do not need a password");
         // save
         Team team = new Team();
         BeanUtils.copyProperties(teamCreateDTO, team);
         if (!this.save(team))
             throw new BaseException(CODES.SYSTEM_ERR, "database insert failed");
+        team = this.getById(team.getId());
         TeamUser teamUser = new TeamUser();
         teamUser.setTeamId(team.getId());
         teamUser.setUserId(currentUser.getId());
+        teamUser.setTeamPos(POSITIONS.CREATOR.getVal());
         teamUser.setJoinTime(team.getCreateTime());
         if (!teamUserService.save(teamUser))
             throw new BaseException(CODES.SYSTEM_ERR, "database insert failed");
         // generate team view object
         TeamVO teamVO = new TeamVO();
         BeanUtils.copyProperties(team, teamVO);
+        teamVO.setCreator(currentUser);
         teamVO.setMembers(List.of(currentUser));
         return teamVO;
     }

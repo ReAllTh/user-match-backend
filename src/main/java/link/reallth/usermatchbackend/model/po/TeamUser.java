@@ -18,7 +18,6 @@ import java.util.Date;
 @TableName(value = "team_user")
 @Data
 public class TeamUser implements Serializable {
-
     /**
      * team_user id
      */
@@ -34,6 +33,13 @@ public class TeamUser implements Serializable {
      * team id
      */
     private String teamId;
+
+    /**
+     * team position
+     * - 1 member
+     * - 0 creator
+     */
+    private Integer teamPos;
 
     /**
      * user join date

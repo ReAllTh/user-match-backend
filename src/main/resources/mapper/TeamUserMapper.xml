@@ -8,6 +8,7 @@
             <id property="id" column="id" jdbcType="VARCHAR"/>
             <result property="userId" column="user_id" jdbcType="VARCHAR"/>
             <result property="teamId" column="team_id" jdbcType="VARCHAR"/>
+            <result property="teamPos" column="team_pos" jdbcType="TINYINT"/>
             <result property="joinTime" column="join_time" jdbcType="TIMESTAMP"/>
             <result property="deleted" column="deleted" jdbcType="TINYINT"/>
             <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
@@ -16,7 +17,7 @@
 
     <sql id="Base_Column_List">
         id,user_id,team_id,
-        join_time,deleted,create_time,
-        update_time
+        team_pos,join_time,deleted,
+        create_time,update_time
     </sql>
 </mapper>

@@ -3,6 +3,7 @@ package link.reallth.usermatchbackend.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.constants.enums.ROLE;
@@ -14,7 +15,6 @@ import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
 import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
-import link.reallth.usermatchbackend.utils.BusinessBeanUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -22,11 +22,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static link.reallth.usermatchbackend.constants.ExceptionDescConst.INVALID_PASSWORD_DESC;
+import static link.reallth.usermatchbackend.constants.RegexConst.PASSWORD_REGEX;
 
 /**
  * user service impl
@@ -37,7 +41,7 @@ import java.util.stream.Stream;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
 
-    private static final String SALT = "salt";
+    private static final String USER_SALT = "salt";
     private static final String PASSWORD = "password";
     private static final String CURRENT_USER = "currentUser";
 
@@ -50,7 +54,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String avatar = userSignUpDTO.getAvatar();
         List<String> tags = userSignUpDTO.getTags();
         // check username email and password
-        this.checkUsernameEmailAndPassword(username, email, password);
+        UserServiceImpl.checkUsernameEmailAndPassword(username, email, password);
         // check if username or email already exist
         if (this.exists(new QueryWrapper<User>().eq("username", username)
                 .or().eq("email", email)))
@@ -59,7 +63,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StringUtils.isNotBlank(avatar) && !Pattern.matches("^(?:/|(?:https?|ftp)://)[\\w/.\\-]{1,2084}$", avatar))
             throw new BaseException(CODES.PARAM_ERR, "invalid url");
         // digest password
-        String digested = DigestUtils.md5DigestAsHex((password + SALT).getBytes(StandardCharsets.UTF_8));
+        String digested = DigestUtils.md5DigestAsHex((password + USER_SALT).getBytes(StandardCharsets.UTF_8));
         // format tags
         tags = tags == null ? Collections.emptyList() : tags.stream().sorted().map(StringUtils::lowerCase).toList();
         // generate a new user
@@ -72,7 +76,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BaseException(CODES.SYSTEM_ERR, "database insert error");
         // keep signUp in status
         newUser = this.getById(newUser.getId());
-        UserVO userVO = BusinessBeanUtils.getUserVO(newUser);
+        UserVO userVO = UserServiceImpl.getUserVO(newUser);
         session.setAttribute(CURRENT_USER, userVO);
         return userVO;
     }
@@ -87,9 +91,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String email = userSignInDTO.getEmail();
         String password = userSignInDTO.getPassword();
         // check params
-        this.checkUsernameEmailAndPassword(username, email, password);
+        UserServiceImpl.checkUsernameEmailAndPassword(username, email, password);
         // digest password
-        String digested = DigestUtils.md5DigestAsHex((password + SALT).getBytes(StandardCharsets.UTF_8));
+        String digested = DigestUtils.md5DigestAsHex((password + USER_SALT).getBytes(StandardCharsets.UTF_8));
         // generate target user
         User user = new User();
         BeanUtils.copyProperties(userSignInDTO, user, PASSWORD);
@@ -99,7 +103,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (targetUser == null)
             throw new BaseException(CODES.BUSINESS_ERR, "user dose not signed up");
         // keep signUp in status
-        UserVO userVO = BusinessBeanUtils.getUserVO(targetUser);
+        UserVO userVO = UserServiceImpl.getUserVO(targetUser);
         session.setAttribute(CURRENT_USER, userVO);
         return userVO;
     }
@@ -140,7 +144,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // get by id if id exist
         String id = userFindDTO.getId();
         if (StringUtils.isNotBlank(id))
-            return Stream.of(this.getById(id)).map(BusinessBeanUtils::getUserVO).toList();
+            return Stream.of(this.getById(id)).map(UserServiceImpl::getUserVO).toList();
         // combination find by other params
         QueryWrapper<User> qw = new QueryWrapper<>();
         // like username
@@ -163,7 +167,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (createTimeTo != null)
             qw.le("create_time", createTimeTo);
         // get current result stream
-        Stream<UserVO> userStream = this.list(qw).stream().map(BusinessBeanUtils::getUserVO);
+        Stream<UserVO> userStream = this.list(qw).stream().map(UserServiceImpl::getUserVO);
         // filter by tags
         List<String> tags = userFindDTO.getTags();
         if (CollectionUtils.isNotEmpty(tags))
@@ -175,7 +179,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return userStream.skip(skipLength).limit(pageSize).toList();
     }
 
-    private void checkUsernameEmailAndPassword(String username, String email, String password) {
+    private static void checkUsernameEmailAndPassword(String username, String email, String password) {
         // check params blank
         if (StringUtils.isBlank(username) && StringUtils.isBlank(email))
             throw new BaseException(CODES.PARAM_ERR, "user and email cannot be both blank");
@@ -188,8 +192,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StringUtils.isNotBlank(email) && !Pattern.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,128}$", email))
             throw new BaseException(CODES.PARAM_ERR, "invalid email address");
         // check password invalid
-        if (!Pattern.matches("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{6,18}$", password))
-            throw new BaseException(CODES.PARAM_ERR, "password must contain a combination of uppercase and lowercase letters and numbers, special characters can be used, and the length should be between 6-18");
+        if (!Pattern.matches(PASSWORD_REGEX, password))
+            throw new BaseException(CODES.PARAM_ERR, INVALID_PASSWORD_DESC);
+    }
+
+    /**
+     * transfer user to user view object
+     *
+     * @param user user to be transfer
+     * @return user view object
+     */
+    private static UserVO getUserVO(User user) {
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO, "tags");
+        userVO.setTags(new Gson().fromJson(user.getTags(), new TypeToken<ArrayList<String>>() {
+        }));
+        return userVO;
     }
 }
 

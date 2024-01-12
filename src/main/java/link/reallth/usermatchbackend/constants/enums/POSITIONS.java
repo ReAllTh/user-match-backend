@@ -4,16 +4,16 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * user role enums
+ * team position enums
  *
  * @author ReAllTh
  */
 @Getter
 @AllArgsConstructor
-public enum ROLE {
+public enum POSITIONS {
 
-    DEFAULT(0),
-    ADMIN(1);
+    MEMBER(0),
+    CREATOR(1);
 
     private final int val;
 }

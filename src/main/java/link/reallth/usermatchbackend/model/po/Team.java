@@ -26,11 +26,6 @@ public class Team implements Serializable {
     private String id;
 
     /**
-     * team creator id
-     */
-    private String creatorId;
-
-    /**
      * team name
      */
     private String teamName;
@@ -43,7 +38,7 @@ public class Team implements Serializable {
     /**
      * team password(if private)
      */
-    @TableField(value = "passwd")
+    @TableField("passwd")
     private String password;
 
     /**

@@ -6,7 +6,6 @@
 
     <resultMap id="BaseResultMap" type="link.reallth.usermatchbackend.model.po.Team">
             <id property="id" column="id" jdbcType="VARCHAR"/>
-            <result property="creatorId" column="creator_id" jdbcType="VARCHAR"/>
             <result property="teamName" column="team_name" jdbcType="VARCHAR"/>
             <result property="description" column="description" jdbcType="VARCHAR"/>
             <result property="password" column="passwd" jdbcType="VARCHAR"/>
@@ -19,9 +18,9 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,creator_id,team_name,
-        description,passwd,max_user,
-        expire_time,status,deleted,
-        create_time,update_time
+        id,team_name,description,
+        passwd,max_user,expire_time,
+        status,deleted,create_time,
+        update_time
     </sql>
 </mapper>

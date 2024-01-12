@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.text.ParseException;
 import java.util.List;
 
+import static link.reallth.usermatchbackend.constants.ControllerConst.*;
+
 /**
  * user controller
  *
@@ -33,8 +35,6 @@ import java.util.List;
 public class UserController {
     @Resource
     private UserService userService;
-    private static final String NULL_POST_MSG = "can not found post body";
-    private static final String NULL_SESSION_MSG = "can not found post session";
 
     /**
      * user sign up
@@ -105,7 +105,7 @@ public class UserController {
     /**
      * user delete
      *
-     * @param id target user id
+     * @param id      target user id
      * @param session session
      * @return result
      */
@@ -121,7 +121,7 @@ public class UserController {
      * user find
      *
      * @param userFindRO user find request object
-     * @param session session
+     * @param session    session
      * @return result user list
      */
     @GetMapping("find")
@@ -136,12 +136,11 @@ public class UserController {
         String createTimeFrom = userFindRO.getCreateTimeFrom();
         String createTimeTo = userFindRO.getCreateTimeTo();
         if (StringUtils.isNoneBlank(createTimeFrom, createTimeTo)) {
-            String parsePattern = "yyyy-MM-dd HH:mm:ss";
             try {
-                userFindDTO.setCreateTimeFrom(DateUtils.parseDate(createTimeFrom, parsePattern));
-                userFindDTO.setCreateTimeTo(DateUtils.parseDate(createTimeTo, parsePattern));
+                userFindDTO.setCreateTimeFrom(DateUtils.parseDate(createTimeFrom, DATE_PATTERN));
+                userFindDTO.setCreateTimeTo(DateUtils.parseDate(createTimeTo, DATE_PATTERN));
             } catch (ParseException e) {
-                throw new BaseException(CODES.SYSTEM_ERR, "data format should be " + parsePattern);
+                throw new BaseException(CODES.PARAM_ERR, "data format should be " + DATE_PATTERN);
             }
         }
         List<UserVO> userVOS = userService.find(userFindDTO, session);
