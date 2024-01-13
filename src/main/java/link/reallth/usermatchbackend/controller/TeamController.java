@@ -58,4 +58,21 @@ public class TeamController {
         TeamVO teamVO = teamService.create(teamCreateDTO, session);
         return ResponseUtils.success(teamVO);
     }
+
+    /**
+     * team disband
+     *
+     * @param id      target team id
+     * @param session session
+     * @return result
+     */
+    @PostMapping("disband")
+    public BaseResponse<Boolean> disband(String id, HttpSession session) {
+        if (StringUtils.isBlank(id))
+            throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
+        if (session == null)
+            throw new BaseException(CODES.PARAM_ERR, NULL_SESSION_MSG);
+        boolean disband = teamService.disband(id, session);
+        return ResponseUtils.success(disband);
+    }
 }
