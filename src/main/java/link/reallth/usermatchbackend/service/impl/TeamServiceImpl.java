@@ -6,6 +6,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.constants.enums.POSITIONS;
+import link.reallth.usermatchbackend.constants.enums.ROLE;
 import link.reallth.usermatchbackend.constants.enums.STATUS;
 import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.mapper.TeamMapper;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static link.reallth.usermatchbackend.constants.ExceptionDescConst.INVALID_PASSWORD_DESC;
+import static link.reallth.usermatchbackend.constants.ExceptionDescConst.PERMISSION_DENIED;
 import static link.reallth.usermatchbackend.constants.RegexConst.PASSWORD_REGEX;
 
 /**
@@ -51,7 +53,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         // check if signed in
         UserVO currentUser = userService.currentUser(session);
         if (currentUser == null)
-            throw new BaseException(CODES.PERMISSION_ERR, "permission denied");
+            throw new BaseException(CODES.PERMISSION_ERR, PERMISSION_DENIED);
         // check if this user create too many teams
         if (teamUserService.count(new QueryWrapper<TeamUser>().eq("user_id", currentUser.getId()).eq("team_pos", POSITIONS.CREATOR.getVal())) > 4)
             throw new BaseException(CODES.PERMISSION_ERR, "can not create more teams");
@@ -104,6 +106,32 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         teamVO.setCreator(currentUser);
         teamVO.setMembers(List.of(currentUser));
         return teamVO;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean disband(String id, HttpSession session) {
+        // check id
+        if (StringUtils.isBlank(id))
+            throw new BaseException(CODES.PARAM_ERR, "id can not be blank");
+        // check signed in
+        UserVO currentUser = userService.currentUser(session);
+        if (currentUser == null)
+            throw new BaseException(CODES.PERMISSION_ERR, PERMISSION_DENIED);
+        // check target team
+        Team tergetTeam = this.getById(id);
+        if (tergetTeam == null)
+            throw new BaseException(CODES.PARAM_ERR, "no such team");
+        // check permission
+        TeamUser teamUser = teamUserService.getOne(new QueryWrapper<TeamUser>().eq("team_id", tergetTeam.getId()).eq("user_id", currentUser.getId()));
+        if (currentUser.getRole() != ROLE.ADMIN.getVal() && teamUser.getTeamPos() != POSITIONS.CREATOR.getVal())
+            throw new BaseException(CODES.PERMISSION_ERR, PERMISSION_DENIED);
+        // delete
+        if (!teamUserService.remove(new QueryWrapper<TeamUser>().eq("team_id", tergetTeam.getId())))
+            throw new BaseException(CODES.SYSTEM_ERR, "database delete failed");
+        if (!this.removeById(tergetTeam))
+            throw new BaseException(CODES.SYSTEM_ERR, "database delete failed");
+        return true;
     }
 }
 

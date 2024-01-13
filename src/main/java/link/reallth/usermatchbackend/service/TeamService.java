@@ -21,4 +21,13 @@ public interface TeamService extends IService<Team> {
      * @return new team view object
      */
     TeamVO create(TeamCreateDTO teamCreateDTO, HttpSession session);
+
+    /**
+     * team disband
+     *
+     * @param id      target team id
+     * @param session session
+     * @return result
+     */
+    boolean disband(String id, HttpSession session);
 }
