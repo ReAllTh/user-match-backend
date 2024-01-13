@@ -3,23 +3,21 @@ package link.reallth.usermatchbackend.model.dto;
 import lombok.Data;
 
 import java.util.Date;
-import java.util.List;
 
 /**
- * user find data transfer object
+ * team find data transfer object
  *
  * @author ReAllTh
  */
 @Data
-public class UserFindDTO {
+public class TeamFindDTO {
 
     private String id;
-    private String username;
-    private String email;
-    private Integer role;
-    private List<String> tags;
+    private String creatorName;
+    private String searchText;
+    private Boolean isFull;
+    private Integer status;
     private Date createTimeFrom;
-    private Date createTimeTo;
 
     private Integer page;
     private Integer pageSize;

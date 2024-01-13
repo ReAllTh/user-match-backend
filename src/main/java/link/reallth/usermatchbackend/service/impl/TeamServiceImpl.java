@@ -11,13 +11,16 @@ import link.reallth.usermatchbackend.constants.enums.STATUS;
 import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.mapper.TeamMapper;
 import link.reallth.usermatchbackend.model.dto.TeamCreateDTO;
+import link.reallth.usermatchbackend.model.dto.TeamFindDTO;
 import link.reallth.usermatchbackend.model.po.Team;
 import link.reallth.usermatchbackend.model.po.TeamUser;
+import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.TeamVO;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.TeamService;
 import link.reallth.usermatchbackend.service.TeamUserService;
 import link.reallth.usermatchbackend.service.UserService;
+import link.reallth.usermatchbackend.utils.UserUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -25,9 +28,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static link.reallth.usermatchbackend.constants.ExceptionDescConst.INVALID_PASSWORD_DESC;
 import static link.reallth.usermatchbackend.constants.ExceptionDescConst.PERMISSION_DENIED;
@@ -42,6 +48,7 @@ import static link.reallth.usermatchbackend.constants.RegexConst.PASSWORD_REGEX;
 public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         implements TeamService {
 
+    public static final String TEAM_ID = "team_id";
     @Resource
     private UserService userService;
     @Resource
@@ -123,14 +130,97 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (tergetTeam == null)
             throw new BaseException(CODES.PARAM_ERR, "no such team");
         // check permission
-        TeamUser teamUser = teamUserService.getOne(new QueryWrapper<TeamUser>().eq("team_id", tergetTeam.getId()).eq("user_id", currentUser.getId()));
+        TeamUser teamUser = teamUserService.getOne(new QueryWrapper<TeamUser>().eq(TEAM_ID, tergetTeam.getId()).eq("user_id", currentUser.getId()));
         if (currentUser.getRole() != ROLE.ADMIN.getVal() && teamUser.getTeamPos() != POSITIONS.CREATOR.getVal())
             throw new BaseException(CODES.PERMISSION_ERR, PERMISSION_DENIED);
         // delete
-        if (!teamUserService.remove(new QueryWrapper<TeamUser>().eq("team_id", tergetTeam.getId())))
+        if (!teamUserService.remove(new QueryWrapper<TeamUser>().eq(TEAM_ID, tergetTeam.getId())))
             throw new BaseException(CODES.SYSTEM_ERR, "database delete failed");
         if (!this.removeById(tergetTeam))
             throw new BaseException(CODES.SYSTEM_ERR, "database delete failed");
         return true;
+    }
+
+    @Override
+    public List<TeamVO> find(TeamFindDTO teamFindDTO, HttpSession session) {
+        // check if signed in
+        UserVO currentUser = userService.currentUser(session);
+        if (currentUser == null)
+            throw new BaseException(CODES.PERMISSION_ERR, PERMISSION_DENIED);
+        // find by id if id exist
+        String id = teamFindDTO.getId();
+        if (StringUtils.isNotBlank(id)) {
+            Team targetTeam = this.getById(id);
+            TeamVO targetTeamVO = new TeamVO();
+            BeanUtils.copyProperties(targetTeam, targetTeamVO);
+            List<TeamUser> targetTeamUserList = teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, targetTeam.getId()));
+            List<UserVO> members = new ArrayList<>();
+            targetTeamUserList.forEach(teamUser -> {
+                UserVO userVO = UserUtils.getUserVO(userService.getById(teamUser.getUserId()));
+                members.add(userVO);
+                if (teamUser.getTeamPos() == POSITIONS.CREATOR.getVal())
+                    targetTeamVO.setCreator(userVO);
+            });
+            targetTeamVO.setMembers(members);
+            return Collections.singletonList(targetTeamVO);
+        }
+        QueryWrapper<Team> qw = new QueryWrapper<>();
+        // search text
+        String searchText = teamFindDTO.getSearchText();
+        if (StringUtils.isNotBlank(searchText))
+            qw.like("team_name", searchText).or().like("description", searchText);
+        // status
+        Integer status = teamFindDTO.getStatus();
+        if (status != null) {
+            if (status != STATUS.PUBLIC.getVal() && status != STATUS.PRIVATE.getVal())
+                throw new BaseException(CODES.PARAM_ERR, "status code invalid");
+            qw.eq("status", status);
+        }
+        // create time
+        Date createTimeFrom = teamFindDTO.getCreateTimeFrom();
+        if (createTimeFrom != null)
+            qw.ge("create_time", createTimeFrom);
+        // filter expired team
+        qw.le("create_time", new Date());
+        // filter based on current result set
+        Stream<Team> teamStream = this.list(qw).stream();
+        // is full
+        Boolean isFull = teamFindDTO.getIsFull();
+        if (isFull != null)
+            teamStream = teamStream.filter(team -> {
+                Integer maxSize = team.getMaxUser();
+                int size = teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, team.getId())).size();
+                return isFull == (size >= maxSize);
+            });
+        // creator name
+        String creatorName = teamFindDTO.getCreatorName();
+        if (StringUtils.isNotBlank(creatorName))
+            teamStream = teamStream.filter(team -> {
+                TeamUser teamUser = teamUserService.getOne(new QueryWrapper<TeamUser>().eq(TEAM_ID, team.getId()).eq("team_pos", POSITIONS.CREATOR.getVal()));
+                User user = userService.getById(teamUser.getUserId());
+                return user.getUsername().toLowerCase().contains(creatorName.toLowerCase());
+            });
+        // paging
+        Integer page = teamFindDTO.getPage();
+        Integer pageSize = teamFindDTO.getPageSize();
+        if (page == null || pageSize == null)
+            throw new BaseException(CODES.PARAM_ERR, "page and page size can not be null");
+        long skipLength = (long) (page - 1) * pageSize;
+        teamStream = teamStream.skip(skipLength).limit(pageSize);
+        // return mapping
+        return teamStream.map(team -> {
+            TeamVO teamVO = new TeamVO();
+            BeanUtils.copyProperties(team, teamVO);
+            List<UserVO> members = new ArrayList<>();
+            teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, team.getId()))
+                    .forEach(teamUser -> {
+                        UserVO userVO = UserUtils.getUserVO(userService.getById(teamUser.getUserId()));
+                        members.add(userVO);
+                        if (teamUser.getTeamPos() == POSITIONS.CREATOR.getVal())
+                            teamVO.setCreator(userVO);
+                    });
+            teamVO.setMembers(members);
+            return teamVO;
+        }).toList();
     }
 }

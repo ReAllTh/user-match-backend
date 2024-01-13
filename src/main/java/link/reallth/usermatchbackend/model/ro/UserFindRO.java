@@ -30,8 +30,8 @@ public class UserFindRO {
     private String createTimeTo;
 
     @Parameter(required = true)
-    private int page;
+    private Integer page;
 
     @Parameter(required = true)
-    private int pageSize;
+    private Integer pageSize;
 }
