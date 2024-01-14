@@ -208,19 +208,27 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         long skipLength = (long) (page - 1) * pageSize;
         teamStream = teamStream.skip(skipLength).limit(pageSize);
         // return mapping
-        return teamStream.map(team -> {
-            TeamVO teamVO = new TeamVO();
-            BeanUtils.copyProperties(team, teamVO);
-            List<UserVO> members = new ArrayList<>();
-            teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, team.getId()))
-                    .forEach(teamUser -> {
-                        UserVO userVO = UserUtils.getUserVO(userService.getById(teamUser.getUserId()));
-                        members.add(userVO);
-                        if (teamUser.getTeamPos() == POSITIONS.CREATOR.getVal())
-                            teamVO.setCreator(userVO);
-                    });
-            teamVO.setMembers(members);
-            return teamVO;
-        }).toList();
+        return teamStream.map(this::getTeamVO).toList();
+    }
+
+    /**
+     * transfer team po to team vo
+     *
+     * @param team team po to be transfer
+     * @return team view object
+     */
+    private TeamVO getTeamVO(Team team) {
+        TeamVO teamVO = new TeamVO();
+        BeanUtils.copyProperties(team, teamVO);
+        List<UserVO> members = new ArrayList<>();
+        teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, team.getId()))
+                .forEach(teamUser -> {
+                    UserVO userVO = UserUtils.getUserVO(userService.getById(teamUser.getUserId()));
+                    members.add(userVO);
+                    if (teamUser.getTeamPos() == POSITIONS.CREATOR.getVal())
+                        teamVO.setCreator(userVO);
+                });
+        teamVO.setMembers(members);
+        return teamVO;
     }
 }

@@ -21,8 +21,8 @@ public class TeamFindRO {
     @Parameter(description = "public - 0 | private - 1")
     private Integer status;
 
-    @Parameter(example = "2024-01-02 00:00:00")
-    private Date createTime;
+    @Parameter(example = "0-365 allowed")
+    private Integer recentDay;
 
     @Parameter(required = true)
     private Integer page;
