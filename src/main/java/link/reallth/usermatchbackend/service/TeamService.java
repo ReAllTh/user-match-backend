@@ -39,7 +39,7 @@ public interface TeamService extends IService<Team> {
      *
      * @param teamFindDTO team find data transfer object
      * @param session     session
-     * @return reslut team list
+     * @return result team list
      */
     List<TeamVO> find(TeamFindDTO teamFindDTO, HttpSession session);
 }

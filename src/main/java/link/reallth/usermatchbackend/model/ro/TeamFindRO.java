@@ -3,8 +3,6 @@ package link.reallth.usermatchbackend.model.ro;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.Data;
 
-import java.util.Date;
-
 /**
  * team find request object
  *
@@ -21,8 +19,8 @@ public class TeamFindRO {
     @Parameter(description = "public - 0 | private - 1")
     private Integer status;
 
-    @Parameter(example = "2024-01-02 00:00:00")
-    private Date createTime;
+    @Parameter(description = "0-365 allowed")
+    private Integer recentDay;
 
     @Parameter(required = true)
     private Integer page;

@@ -19,6 +19,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.text.ParseException;
@@ -31,7 +32,8 @@ import static link.reallth.usermatchbackend.constants.ControllerConst.*;
  *
  * @author ReAllTh
  */
-@RestController("user")
+@RestController
+@RequestMapping("user")
 public class UserController {
     @Resource
     private UserService userService;
@@ -124,7 +126,7 @@ public class UserController {
      * @param session    session
      * @return result user list
      */
-    @GetMapping("find")
+    @GetMapping("/find")
     public BaseResponse<List<UserVO>> find(UserFindRO userFindRO, HttpSession session) {
         if (userFindRO == null)
             throw new BaseException(CODES.PARAM_ERR, "can not found get params");
