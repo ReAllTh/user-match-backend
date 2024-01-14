@@ -12,6 +12,7 @@ import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.mapper.TeamMapper;
 import link.reallth.usermatchbackend.model.dto.TeamCreateDTO;
 import link.reallth.usermatchbackend.model.dto.TeamFindDTO;
+import link.reallth.usermatchbackend.model.dto.TeamUpdateDTO;
 import link.reallth.usermatchbackend.model.po.Team;
 import link.reallth.usermatchbackend.model.po.TeamUser;
 import link.reallth.usermatchbackend.model.po.User;
@@ -209,6 +210,56 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         teamStream = teamStream.skip(skipLength).limit(pageSize);
         // return mapping
         return teamStream.map(this::getTeamVO).toList();
+    }
+
+    @Override
+    public TeamVO update(TeamUpdateDTO teamUpdateDTO, HttpSession session) {
+        // check if signed in
+        UserVO currentUser = userService.currentUser(session);
+        if (currentUser == null)
+            throw new BaseException(CODES.PERMISSION_ERR, PERMISSION_DENIED);
+        // check id
+        String id = teamUpdateDTO.getId();
+        if (StringUtils.isBlank(id))
+            throw new BaseException(CODES.PARAM_ERR, "target team id can not be null");
+        // check team name
+        String teamName = teamUpdateDTO.getTeamName();
+        if (StringUtils.isNotBlank(teamName) && teamName.length() > 16)
+            throw new BaseException(CODES.PARAM_ERR, "team name exceeds 16 characters");
+        // check team description
+        String description = teamUpdateDTO.getDescription();
+        if (StringUtils.isNotBlank(description) && description.length() > 2048)
+            throw new BaseException(CODES.PARAM_ERR, "description exceeds 2048 characters");
+        // check team max user
+        Integer maxUser = teamUpdateDTO.getMaxUser();
+        if (maxUser != null && (maxUser < 2 || maxUser > 5))
+            throw new BaseException(CODES.PARAM_ERR, "max user must between 2 and 5");
+        // check expire time
+        Date expireTime = teamUpdateDTO.getExpireTime();
+        if (expireTime != null && expireTime.before(new Date()))
+            throw new BaseException(CODES.PARAM_ERR, "expire time must before now");
+        // check status and password
+        Integer status = teamUpdateDTO.getStatus();
+        if (status != null) {
+            if (status != STATUS.PUBLIC.getVal() && status != STATUS.PRIVATE.getVal())
+                throw new BaseException(CODES.PARAM_ERR, "status must public or private");
+            String password = teamUpdateDTO.getPassword();
+            if (status == STATUS.PRIVATE.getVal()) {
+                if (StringUtils.isBlank(password))
+                    throw new BaseException(CODES.PARAM_ERR, "private team needs a password");
+                if (!Pattern.matches(PASSWORD_REGEX, password))
+                    throw new BaseException(CODES.PARAM_ERR, INVALID_PASSWORD_DESC);
+                teamUpdateDTO.setPassword(DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8)));
+            } else if (StringUtils.isNotBlank(password))
+                throw new BaseException(CODES.PARAM_ERR, "public team do not need a password");
+        }
+        // update
+        Team team = new Team();
+        BeanUtils.copyProperties(teamUpdateDTO, team);
+        if (!this.update(team, new QueryWrapper<Team>().eq(TEAM_ID, team.getId())))
+            throw new BaseException(CODES.SYSTEM_ERR, "databese update failed");
+        team = this.getById(team.getId());
+        return this.getTeamVO(team);
     }
 
     /**
