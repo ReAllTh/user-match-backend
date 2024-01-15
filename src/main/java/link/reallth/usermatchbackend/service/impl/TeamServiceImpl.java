@@ -256,8 +256,8 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         // update
         Team team = new Team();
         BeanUtils.copyProperties(teamUpdateDTO, team);
-        if (!this.update(team, new QueryWrapper<Team>().eq(TEAM_ID, team.getId())))
-            throw new BaseException(CODES.SYSTEM_ERR, "databese update failed");
+        if (!this.update(team, new QueryWrapper<Team>().eq("id", team.getId())))
+            throw new BaseException(CODES.SYSTEM_ERR, "database update failed");
         team = this.getById(team.getId());
         return this.getTeamVO(team);
     }

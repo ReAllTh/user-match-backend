@@ -7,8 +7,10 @@ import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.model.dto.TeamCreateDTO;
 import link.reallth.usermatchbackend.model.dto.TeamFindDTO;
+import link.reallth.usermatchbackend.model.dto.TeamUpdateDTO;
 import link.reallth.usermatchbackend.model.ro.TeamCreateRO;
 import link.reallth.usermatchbackend.model.ro.TeamFindRO;
+import link.reallth.usermatchbackend.model.ro.TeamUpdateRO;
 import link.reallth.usermatchbackend.model.vo.TeamVO;
 import link.reallth.usermatchbackend.service.TeamService;
 import link.reallth.usermatchbackend.utils.ResponseUtils;
@@ -104,5 +106,32 @@ public class TeamController {
             teamFindDTO.setCreateTimeFrom(DateUtils.addDays(new Date(), -recentDay));
         List<TeamVO> teamVOS = teamService.find(teamFindDTO, session);
         return ResponseUtils.success(teamVOS);
+    }
+
+    /**
+     * team update
+     *
+     * @param teamUpdateRO team update request object
+     * @param session      session
+     * @return updated team view object
+     */
+    @PostMapping("update")
+    public BaseResponse<TeamVO> update(TeamUpdateRO teamUpdateRO, HttpSession session) {
+        if (teamUpdateRO == null)
+            throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
+        if (session == null)
+            throw new BaseException(CODES.PARAM_ERR, NULL_SESSION_MSG);
+        TeamUpdateDTO teamUpdateDTO = new TeamUpdateDTO();
+        BeanUtils.copyProperties(teamUpdateRO, teamUpdateDTO);
+        String expireTime = teamUpdateRO.getExpireTime();
+        if (StringUtils.isNotBlank(expireTime)) {
+            try {
+                teamUpdateDTO.setExpireTime(DateUtils.parseDate(expireTime, DATE_PATTERN));
+            } catch (ParseException e) {
+                throw new BaseException(CODES.PARAM_ERR, "date format should be: " + DATE_PATTERN);
+            }
+        }
+        TeamVO updated = teamService.update(teamUpdateDTO, session);
+        return ResponseUtils.success(updated);
     }
 }
