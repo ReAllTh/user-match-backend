@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.model.dto.UserFindDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignInDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
+import link.reallth.usermatchbackend.model.dto.UserUpdateDTO;
 import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 
@@ -66,4 +67,13 @@ public interface UserService extends IService<User> {
      * @return target users list
      */
     List<UserVO> find(UserFindDTO userFindDTO, HttpSession session);
+
+    /**
+     * user update
+     *
+     * @param userUpdateDTO user update data transfer object
+     * @param session       session
+     * @return target user view object
+     */
+    UserVO update(UserUpdateDTO userUpdateDTO, HttpSession session);
 }

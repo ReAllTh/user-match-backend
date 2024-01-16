@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static link.reallth.usermatchbackend.constants.ExceptionDescConst.INVALID_PASSWORD_DESC;
+import static link.reallth.usermatchbackend.constants.ExceptionDescConst.PASSWORD_INVALID_MSG;
 import static link.reallth.usermatchbackend.constants.ExceptionDescConst.PERMISSION_DENIED;
 import static link.reallth.usermatchbackend.constants.RegexConst.PASSWORD_REGEX;
 
@@ -90,7 +90,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             if (StringUtils.isBlank(password))
                 throw new BaseException(CODES.PARAM_ERR, "private team needs a password");
             if (!Pattern.matches(PASSWORD_REGEX, password))
-                throw new BaseException(CODES.PARAM_ERR, INVALID_PASSWORD_DESC);
+                throw new BaseException(CODES.PARAM_ERR, PASSWORD_INVALID_MSG);
             teamCreateDTO.setPassword(DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8)));
         }
         if (status == STATUS.PUBLIC.getVal() && StringUtils.isNotBlank(password))
@@ -248,7 +248,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
                 if (StringUtils.isBlank(password))
                     throw new BaseException(CODES.PARAM_ERR, "private team needs a password");
                 if (!Pattern.matches(PASSWORD_REGEX, password))
-                    throw new BaseException(CODES.PARAM_ERR, INVALID_PASSWORD_DESC);
+                    throw new BaseException(CODES.PARAM_ERR, PASSWORD_INVALID_MSG);
                 teamUpdateDTO.setPassword(DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8)));
             } else if (StringUtils.isNotBlank(password))
                 throw new BaseException(CODES.PARAM_ERR, "public team do not need a password");
