@@ -1,5 +1,6 @@
 package link.reallth.usermatchbackend.controller;
 
+import com.google.gson.Gson;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.common.BaseResponse;
@@ -8,9 +9,11 @@ import link.reallth.usermatchbackend.exception.BaseException;
 import link.reallth.usermatchbackend.model.dto.UserFindDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignInDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignUpDTO;
+import link.reallth.usermatchbackend.model.dto.UserUpdateDTO;
 import link.reallth.usermatchbackend.model.ro.UserFindRO;
 import link.reallth.usermatchbackend.model.ro.UserSignInRO;
 import link.reallth.usermatchbackend.model.ro.UserSignUpRO;
+import link.reallth.usermatchbackend.model.ro.UserUpdateRO;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
 import link.reallth.usermatchbackend.utils.ResponseUtils;
@@ -147,5 +150,34 @@ public class UserController {
         }
         List<UserVO> userVOS = userService.find(userFindDTO, session);
         return ResponseUtils.success(userVOS);
+    }
+
+    /**
+     * user update
+     *
+     * @param userUpdateRO user update request object
+     * @param session      session
+     * @return user view object
+     */
+    @PostMapping("update")
+    public BaseResponse<UserVO> update(UserUpdateRO userUpdateRO, HttpSession session) {
+        if (userUpdateRO == null)
+            throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
+        if (session == null)
+            throw new BaseException(CODES.PARAM_ERR, NULL_SESSION_MSG);
+        UserUpdateDTO userUpdateDTO = new UserUpdateDTO();
+        BeanUtils.copyProperties(userUpdateRO, userUpdateDTO);
+        List<String> tags = userUpdateRO.getTags();
+        // parse tags
+        if (tags != null) {
+            if (tags.size() > 20)
+                throw new BaseException(CODES.PARAM_ERR, "too many tags");
+            for (String tag : tags)
+                if (tag.length() > 20)
+                    throw new BaseException(CODES.PARAM_ERR, "tag too long: " + tag);
+            userUpdateDTO.setTags(new Gson().toJson(tags));
+        }
+        UserVO newUser = userService.update(userUpdateDTO, session);
+        return ResponseUtils.success(newUser);
     }
 }
