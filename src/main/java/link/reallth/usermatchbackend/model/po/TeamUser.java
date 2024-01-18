@@ -42,11 +42,6 @@ public class TeamUser implements Serializable {
     private Integer teamPos;
 
     /**
-     * user join date
-     */
-    private Date joinTime;
-
-    /**
      * logical deleted
      * -1 deleted
      * -0 normal

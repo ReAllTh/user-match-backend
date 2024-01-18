@@ -52,4 +52,12 @@ public interface TeamService extends IService<Team> {
      * @return updated team view object
      */
     TeamVO update(TeamUpdateDTO teamUpdateDTO, HttpSession session);
+
+    /**
+     * return team view object corresponding to team persistent object
+     *
+     * @param team team persistent object
+     * @return team view object
+     */
+    TeamVO getTeamVO(Team team);
 }

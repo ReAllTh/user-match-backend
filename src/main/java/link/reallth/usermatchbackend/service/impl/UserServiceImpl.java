@@ -15,7 +15,7 @@ import link.reallth.usermatchbackend.model.dto.UserUpdateDTO;
 import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
-import link.reallth.usermatchbackend.utils.UserUtils;
+import link.reallth.usermatchbackend.utils.BusinessBeanUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -83,7 +83,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BaseException(CODES.SYSTEM_ERR, "database insert error");
         // keep signUp in status
         newUser = this.getById(newUser.getId());
-        UserVO userVO = UserUtils.getUserVO(newUser);
+        UserVO userVO = BusinessBeanUtils.getUserVO(newUser);
         session.setAttribute(CURRENT_USER, userVO);
         return userVO;
     }
@@ -110,7 +110,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (targetUser == null)
             throw new BaseException(CODES.BUSINESS_ERR, "user dose not signed up");
         // keep signUp in status
-        UserVO userVO = UserUtils.getUserVO(targetUser);
+        UserVO userVO = BusinessBeanUtils.getUserVO(targetUser);
         session.setAttribute(CURRENT_USER, userVO);
         return userVO;
     }
@@ -151,7 +151,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // get by id if id exist
         String id = userFindDTO.getId();
         if (StringUtils.isNotBlank(id))
-            return Stream.of(this.getById(id)).map(UserUtils::getUserVO).toList();
+            return Stream.of(this.getById(id)).map(BusinessBeanUtils::getUserVO).toList();
         // combination find by other params
         QueryWrapper<User> qw = new QueryWrapper<>();
         // like username
@@ -174,7 +174,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (createTimeTo != null)
             qw.le("create_time", createTimeTo);
         // get current result stream
-        Stream<UserVO> userStream = this.list(qw).stream().map(UserUtils::getUserVO);
+        Stream<UserVO> userStream = this.list(qw).stream().map(BusinessBeanUtils::getUserVO);
         // filter by tags
         List<String> tags = userFindDTO.getTags();
         if (CollectionUtils.isNotEmpty(tags))
@@ -225,7 +225,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!this.update(user, new QueryWrapper<User>().eq("id", user.getId())))
             throw new BaseException(CODES.SYSTEM_ERR, "database update failed");
         user = this.getById(user.getId());
-        UserVO newUser = UserUtils.getUserVO(user);
+        UserVO newUser = BusinessBeanUtils.getUserVO(user);
         if (currentUser.getId().equals(newUser.getId()))
             session.setAttribute(CURRENT_USER, newUser);
         return newUser;

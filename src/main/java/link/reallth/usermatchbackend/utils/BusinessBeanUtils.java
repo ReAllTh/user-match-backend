@@ -13,9 +13,9 @@ import java.util.ArrayList;
  *
  * @author ReAllTh
  */
-public class UserUtils {
+public class BusinessBeanUtils {
 
-    private UserUtils() {
+    private BusinessBeanUtils() {
     }
 
     /**

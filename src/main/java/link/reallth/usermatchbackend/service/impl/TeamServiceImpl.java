@@ -21,7 +21,7 @@ import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.TeamService;
 import link.reallth.usermatchbackend.service.TeamUserService;
 import link.reallth.usermatchbackend.service.UserService;
-import link.reallth.usermatchbackend.utils.UserUtils;
+import link.reallth.usermatchbackend.utils.BusinessBeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -105,7 +105,6 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         teamUser.setTeamId(team.getId());
         teamUser.setUserId(currentUser.getId());
         teamUser.setTeamPos(POSITIONS.CREATOR.getVal());
-        teamUser.setJoinTime(team.getCreateTime());
         if (!teamUserService.save(teamUser))
             throw new BaseException(CODES.SYSTEM_ERR, "database insert failed");
         // generate team view object
@@ -157,7 +156,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             List<TeamUser> targetTeamUserList = teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, targetTeam.getId()));
             List<UserVO> members = new ArrayList<>();
             targetTeamUserList.forEach(teamUser -> {
-                UserVO userVO = UserUtils.getUserVO(userService.getById(teamUser.getUserId()));
+                UserVO userVO = BusinessBeanUtils.getUserVO(userService.getById(teamUser.getUserId()));
                 members.add(userVO);
                 if (teamUser.getTeamPos() == POSITIONS.CREATOR.getVal())
                     targetTeamVO.setCreator(userVO);
@@ -268,13 +267,13 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
      * @param team team po to be transfer
      * @return team view object
      */
-    private TeamVO getTeamVO(Team team) {
+    public TeamVO getTeamVO(Team team) {
         TeamVO teamVO = new TeamVO();
         BeanUtils.copyProperties(team, teamVO);
         List<UserVO> members = new ArrayList<>();
         teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, team.getId()))
                 .forEach(teamUser -> {
-                    UserVO userVO = UserUtils.getUserVO(userService.getById(teamUser.getUserId()));
+                    UserVO userVO = BusinessBeanUtils.getUserVO(userService.getById(teamUser.getUserId()));
                     members.add(userVO);
                     if (teamUser.getTeamPos() == POSITIONS.CREATOR.getVal())
                         teamVO.setCreator(userVO);
