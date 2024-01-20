@@ -20,4 +20,13 @@ public interface TeamUserService extends IService<TeamUser> {
      * @return joined team view object
      */
     TeamVO join(String id, HttpSession session);
+
+    /**
+     * team quit
+     *
+     * @param id      target team id
+     * @param session session
+     * @return result
+     */
+    boolean quit(String id, HttpSession session);
 }
