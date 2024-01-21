@@ -43,4 +43,21 @@ public class TeamUserController {
         TeamVO teamVO = teamUserService.join(id, session);
         return ResponseUtils.success(teamVO);
     }
+
+    /**
+     * team quit
+     *
+     * @param id      target team id
+     * @param session session
+     * @return result
+     */
+    @PostMapping("quit")
+    public BaseResponse<Boolean> quit(String id, HttpSession session) {
+        if (StringUtils.isBlank(id))
+            throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
+        if (session == null)
+            throw new BaseException(CODES.PARAM_ERR, NULL_SESSION_MSG);
+        boolean result = teamUserService.quit(id, session);
+        return ResponseUtils.success(result);
+    }
 }
