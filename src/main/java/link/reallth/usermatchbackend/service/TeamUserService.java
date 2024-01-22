@@ -29,4 +29,14 @@ public interface TeamUserService extends IService<TeamUser> {
      * @return result
      */
     boolean quit(String id, HttpSession session);
+
+    /**
+     * remove member
+     *
+     * @param teamId  target team id
+     * @param userId  target member id
+     * @param session session
+     * @return result team view object
+     */
+    TeamVO removeMember(String teamId, String userId, HttpSession session);
 }

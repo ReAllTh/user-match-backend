@@ -21,7 +21,6 @@ import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.TeamService;
 import link.reallth.usermatchbackend.service.TeamUserService;
 import link.reallth.usermatchbackend.service.UserService;
-import link.reallth.usermatchbackend.utils.BusinessBeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -156,7 +155,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             List<TeamUser> targetTeamUserList = teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, targetTeam.getId()));
             List<UserVO> members = new ArrayList<>();
             targetTeamUserList.forEach(teamUser -> {
-                UserVO userVO = BusinessBeanUtils.getUserVO(userService.getById(teamUser.getUserId()));
+                UserVO userVO = UserServiceImpl.getUserVO(userService.getById(teamUser.getUserId()));
                 members.add(userVO);
                 if (teamUser.getTeamPos() == POSITIONS.CREATOR.getVal())
                     targetTeamVO.setCreator(userVO);
@@ -273,7 +272,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         List<UserVO> members = new ArrayList<>();
         teamUserService.list(new QueryWrapper<TeamUser>().eq(TEAM_ID, team.getId()))
                 .forEach(teamUser -> {
-                    UserVO userVO = BusinessBeanUtils.getUserVO(userService.getById(teamUser.getUserId()));
+                    UserVO userVO = UserServiceImpl.getUserVO(userService.getById(teamUser.getUserId()));
                     members.add(userVO);
                     if (teamUser.getTeamPos() == POSITIONS.CREATOR.getVal())
                         teamVO.setCreator(userVO);

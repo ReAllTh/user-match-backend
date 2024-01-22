@@ -3,6 +3,7 @@ package link.reallth.usermatchbackend.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.constants.enums.ROLE;
@@ -15,7 +16,6 @@ import link.reallth.usermatchbackend.model.dto.UserUpdateDTO;
 import link.reallth.usermatchbackend.model.po.User;
 import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
-import link.reallth.usermatchbackend.utils.BusinessBeanUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -83,7 +84,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BaseException(CODES.SYSTEM_ERR, "database insert error");
         // keep signUp in status
         newUser = this.getById(newUser.getId());
-        UserVO userVO = BusinessBeanUtils.getUserVO(newUser);
+        UserVO userVO = UserServiceImpl.getUserVO(newUser);
         session.setAttribute(CURRENT_USER, userVO);
         return userVO;
     }
@@ -110,7 +111,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (targetUser == null)
             throw new BaseException(CODES.BUSINESS_ERR, "user dose not signed up");
         // keep signUp in status
-        UserVO userVO = BusinessBeanUtils.getUserVO(targetUser);
+        UserVO userVO = UserServiceImpl.getUserVO(targetUser);
         session.setAttribute(CURRENT_USER, userVO);
         return userVO;
     }
@@ -151,7 +152,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // get by id if id exist
         String id = userFindDTO.getId();
         if (StringUtils.isNotBlank(id))
-            return Stream.of(this.getById(id)).map(BusinessBeanUtils::getUserVO).toList();
+            return Stream.of(this.getById(id)).map(UserServiceImpl::getUserVO).toList();
         // combination find by other params
         QueryWrapper<User> qw = new QueryWrapper<>();
         // like username
@@ -174,7 +175,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (createTimeTo != null)
             qw.le("create_time", createTimeTo);
         // get current result stream
-        Stream<UserVO> userStream = this.list(qw).stream().map(BusinessBeanUtils::getUserVO);
+        Stream<UserVO> userStream = this.list(qw).stream().map(UserServiceImpl::getUserVO);
         // filter by tags
         List<String> tags = userFindDTO.getTags();
         if (CollectionUtils.isNotEmpty(tags))
@@ -225,7 +226,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!this.update(user, new QueryWrapper<User>().eq("id", user.getId())))
             throw new BaseException(CODES.SYSTEM_ERR, "database update failed");
         user = this.getById(user.getId());
-        UserVO newUser = BusinessBeanUtils.getUserVO(user);
+        UserVO newUser = UserServiceImpl.getUserVO(user);
         if (currentUser.getId().equals(newUser.getId()))
             session.setAttribute(CURRENT_USER, newUser);
         return newUser;
@@ -246,6 +247,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // check password invalid
         if (!Pattern.matches(PASSWORD_REGEX, password))
             throw new BaseException(CODES.PARAM_ERR, PASSWORD_INVALID_MSG);
+    }
+
+    /**
+     * transfer user to user view object
+     *
+     * @param user user to be transfer
+     * @return user view object
+     */
+    public static UserVO getUserVO(User user) {
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO, "tags");
+        userVO.setTags(new Gson().fromJson(user.getTags(), new TypeToken<ArrayList<String>>() {
+        }));
+        return userVO;
     }
 }
 
