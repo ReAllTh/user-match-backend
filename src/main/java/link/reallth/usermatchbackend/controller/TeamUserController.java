@@ -60,4 +60,21 @@ public class TeamUserController {
         boolean result = teamUserService.quit(id, session);
         return ResponseUtils.success(result);
     }
+
+    /**
+     * team member remove
+     *
+     * @param teamId  target team id
+     * @param userId  target member id
+     * @param session session
+     * @return result
+     */
+    public BaseResponse<TeamVO> remove(String teamId, String userId, HttpSession session) {
+        if (StringUtils.isAnyBlank(teamId, userId))
+            throw new BaseException(CODES.PARAM_ERR, NULL_POST_MSG);
+        if (session == null)
+            throw new BaseException(CODES.PARAM_ERR, NULL_SESSION_MSG);
+        TeamVO teamVO = teamUserService.removeMember(teamId, userId, session);
+        return ResponseUtils.success(teamVO);
+    }
 }
