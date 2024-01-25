@@ -82,5 +82,5 @@ public interface UserService extends IService<User> {
      *
      * @return main page users
      */
-    List<UserVO> mainPageUsers(int page, int pageSize);
+    List<UserVO> mainPageUsers(int page);
 }

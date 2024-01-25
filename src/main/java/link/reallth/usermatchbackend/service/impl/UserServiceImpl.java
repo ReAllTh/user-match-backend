@@ -239,7 +239,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public List<UserVO> mainPageUsers(int page, int pageSize) {
+    public List<UserVO> mainPageUsers(int page) {
         if (page < 1)
             throw new BaseException(CODES.PERMISSION_ERR, "invalid page number");
         // try fetch from redis
@@ -247,7 +247,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         RBucket<List<UserVO>> rBucket = redissonClient.getBucket(key);
         if (!rBucket.isExists()) {
             // cache
-            List<UserVO> userVOList = this.list(new Page<>(page, pageSize)).stream().map(UserServiceImpl::getUserVO).toList();
+            List<UserVO> userVOList = this.list(new Page<>(page, 10)).stream().map(UserServiceImpl::getUserVO).toList();
             rBucket.set(userVOList, Duration.ofSeconds(10L + new Random().nextLong(10L)));
         }
         return rBucket.get();

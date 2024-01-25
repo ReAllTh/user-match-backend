@@ -180,4 +180,19 @@ public class UserController {
         UserVO newUser = userService.update(userUpdateDTO, session);
         return ResponseUtils.success(newUser);
     }
+
+
+    /**
+     * return main page users
+     *
+     * @param page page
+     * @return main page users
+     */
+    @GetMapping("mainpage")
+    public BaseResponse<List<UserVO>> mainPageUsers(int page) {
+        if (page < 1)
+            throw new BaseException(CODES.PERMISSION_ERR, "invalid page");
+        List<UserVO> users = userService.mainPageUsers(page);
+        return ResponseUtils.success(users);
+    }
 }
