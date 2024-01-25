@@ -76,4 +76,11 @@ public interface UserService extends IService<User> {
      * @return target user view object
      */
     UserVO update(UserUpdateDTO userUpdateDTO, HttpSession session);
+
+    /**
+     * return main page users
+     *
+     * @return main page users
+     */
+    List<UserVO> mainPageUsers(int page, int pageSize);
 }

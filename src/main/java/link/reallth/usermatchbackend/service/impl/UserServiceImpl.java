@@ -1,10 +1,13 @@
 package link.reallth.usermatchbackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpSession;
+import link.reallth.usermatchbackend.constants.CacheConst;
 import link.reallth.usermatchbackend.constants.enums.CODES;
 import link.reallth.usermatchbackend.constants.enums.ROLE;
 import link.reallth.usermatchbackend.exception.BaseException;
@@ -18,15 +21,15 @@ import link.reallth.usermatchbackend.model.vo.UserVO;
 import link.reallth.usermatchbackend.service.UserService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.time.Duration;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -52,6 +55,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public static final String INVALID_EMAIL_MSG = "invalid email address";
     public static final String URL_REGEX = "^(?:/|(?:https?|ftp)://)[\\w/.\\-]{1,2084}$";
     public static final String URL_INVALID_MSG = "invalid url";
+
+    @Resource
+    private RedissonClient redissonClient;
 
     @Override
     public UserVO signUp(UserSignUpDTO userSignUpDTO, HttpSession session) {
@@ -230,6 +236,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (currentUser.getId().equals(newUser.getId()))
             session.setAttribute(CURRENT_USER, newUser);
         return newUser;
+    }
+
+    @Override
+    public List<UserVO> mainPageUsers(int page, int pageSize) {
+        if (page < 1)
+            throw new BaseException(CODES.PERMISSION_ERR, "invalid page number");
+        // try fetch from redis
+        String key = CacheConst.MAIN_PAGE + page;
+        RBucket<List<UserVO>> rBucket = redissonClient.getBucket(key);
+        if (!rBucket.isExists()) {
+            // cache
+            List<UserVO> userVOList = this.list(new Page<>(page, pageSize)).stream().map(UserServiceImpl::getUserVO).toList();
+            rBucket.set(userVOList, Duration.ofSeconds(10L + new Random().nextLong(10L)));
+        }
+        return rBucket.get();
     }
 
     private static void checkUsernameEmailAndPassword(String username, String email, String password) {

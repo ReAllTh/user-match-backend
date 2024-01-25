@@ -6,6 +6,13 @@ spring:
     url: jdbc:mysql://localhost:3306/user_center
     username: reallth
     password: ....
+  data:
+    redis:
+      port: 6379
+      database: 0
+      host: localhost
+  session:
+    timeout: 86400
   # data format
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
