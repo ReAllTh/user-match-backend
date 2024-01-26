@@ -181,7 +181,6 @@ public class UserController {
         return ResponseUtils.success(newUser);
     }
 
-
     /**
      * return main page users
      *
