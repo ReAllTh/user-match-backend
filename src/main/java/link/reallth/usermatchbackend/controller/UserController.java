@@ -188,10 +188,24 @@ public class UserController {
      * @return main page users
      */
     @GetMapping("mainpage")
-    public BaseResponse<List<UserVO>> mainPageUsers(int page) {
+    public BaseResponse<List<UserVO>> mainPage(int page) {
         if (page < 1)
             throw new BaseException(CODES.PERMISSION_ERR, "invalid page");
         List<UserVO> users = userService.mainPageUsers(page);
         return ResponseUtils.success(users);
+    }
+
+    /**
+     * return match users
+     *
+     * @param session session
+     * @return match users
+     */
+    @GetMapping("match")
+    public BaseResponse<List<UserVO>> match(HttpSession session) {
+        if (session == null)
+            throw new BaseException(CODES.PERMISSION_ERR, NULL_SESSION_MSG);
+        List<UserVO> matched = userService.match(session);
+        return ResponseUtils.success(matched);
     }
 }

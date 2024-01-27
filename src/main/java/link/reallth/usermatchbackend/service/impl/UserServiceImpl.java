@@ -253,6 +253,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return rBucket.get();
     }
 
+    @Override
+    public List<UserVO> match(HttpSession session) {
+        UserVO currentUser = this.currentUser(session);
+        // check if signed in
+        if (currentUser == null)
+            throw new BaseException(CODES.PERMISSION_ERR, PERMISSION_DENIED);
+        // match
+        Gson gson = new Gson();
+        Queue<User> queue = new PriorityQueue<>(
+                (user1, user2) -> {
+                    int distance1 = UserServiceImpl.getDistance(user1.getTags(), gson.toJson(currentUser.getTags()));
+                    int distance2 = UserServiceImpl.getDistance(user2.getTags(), gson.toJson(currentUser.getTags()));
+                    return distance1 - distance2;
+                }
+        );
+        queue.addAll(this.list(new QueryWrapper<User>().ne("id", currentUser.getId())));
+        return queue.stream()
+                .limit(5)
+                .map(UserServiceImpl::getUserVO)
+                .toList();
+    }
+
     private static void checkUsernameEmailAndPassword(String username, String email, String password) {
         // check params blank
         if (StringUtils.isBlank(username) && StringUtils.isBlank(email))
@@ -282,6 +304,51 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         userVO.setTags(new Gson().fromJson(user.getTags(), new TypeToken<ArrayList<String>>() {
         }));
         return userVO;
+    }
+
+    /**
+     * return edit distance of given two string
+     *
+     * @param s1 string 1
+     * @param s2 string 2
+     * @return edit distance of two strng
+     */
+    private static int getDistance(String s1, String s2) {
+        int len1 = s1.length();
+        int len2 = s2.length();
+        int[][] d = new int[len1 + 1][len2 + 1];
+
+        int i = 0;
+        int j = 0;
+        for (i = 0; i <= len1; i++)
+            d[i][0] = i;
+        for (j = 0; j <= len2; j++)
+            d[0][j] = j;
+        for (i = 1; i < len1 + 1; i++)
+            for (j = 1; j < len2 + 1; j++) {
+                int cost = 1;
+                if (s1.charAt(i - 1) == s2.charAt(j - 1)) {
+                    cost = 0;
+                }
+                int delete = d[i - 1][j] + 1;
+                int insert = d[i][j - 1] + 1;
+                int substitution = d[i - 1][j - 1] + cost;
+                d[i][j] = min(delete, insert, substitution);
+            }
+        return (d[len1][len2]);
+    }
+
+    /**
+     * return min of three int
+     *
+     * @param d delete
+     * @param i insert
+     * @param s substitution
+     * @return min
+     */
+    private static int min(int d, int i, int s) {
+        int temp = Math.min(d, i);
+        return Math.min(s, temp);
     }
 }
 

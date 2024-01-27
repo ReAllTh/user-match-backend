@@ -1,6 +1,7 @@
 package link.reallth.usermatchbackend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import link.reallth.usermatchbackend.model.dto.UserFindDTO;
 import link.reallth.usermatchbackend.model.dto.UserSignInDTO;
@@ -83,4 +84,12 @@ public interface UserService extends IService<User> {
      * @return main page users
      */
     List<UserVO> mainPageUsers(int page);
+
+    /**
+     * similar user match
+     *
+     * @param request request
+     * @return matched users
+     */
+    List<UserVO> match(HttpSession session);
 }
