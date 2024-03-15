@@ -181,7 +181,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (createTimeFrom != null)
             qw.ge("create_time", createTimeFrom);
         // filter expired team
-        qw.ge("expire_time", new Date());
+        qw.le("create_time", new Date());
         // filter based on current result set
         Stream<Team> teamStream = this.list(qw).stream();
         // is full
