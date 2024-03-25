@@ -1,8 +1,10 @@
 # 用户匹配系统
 
-<img alt="Static Badge" src="https://img.shields.io/badge/status-dev-green">
-<img alt="Static Badge" src="https://img.shields.io/badge/version-0.0.1 SNAPSHOT-blue">
-<img alt="GitHub License" src="https://img.shields.io/github/license/ReAllTh/user-match-backend">
+<div>
+  <img alt="Static Badge" src="https://img.shields.io/badge/status-dev-green">
+  <img alt="Static Badge" src="https://img.shields.io/badge/version-0.0.1 SNAPSHOT-blue">
+  <img alt="GitHub License" src="https://img.shields.io/github/license/ReAllTh/user-match-backend">
+</div>
 
 一个可以根据标签进行用户匹配的后端系统，只用作学习和交流
 
